@@ -34,7 +34,7 @@
 		var population = [];
 		let bestOrder;
 		let bestOrderScore = Infinity;
-		let num_of_cities = 54;
+		let num_of_cities = 100;
 
 		let calculating = false;
 		let show_lines = false;
@@ -96,6 +96,16 @@
 			for(let i=0;i<num;i++){
 				let x = random(0,canvas.width);
 				let y = random(0,canvas.height);
+				cities.push(new Vector(x,y));
+			}
+			bestOrder = population[0];
+			bestOrder = generateLoop(range(0,num));
+		}
+
+		function generateCitiesWorst(num=5){
+			for(let i=0;i<num;i++){
+				let x = random(0,canvas.width);
+				let y = canvas.height/2;
 				cities.push(new Vector(x,y));
 			}
 			bestOrder = population[0];
