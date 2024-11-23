@@ -15,6 +15,7 @@
     </style>
     <script src="helpers.js"></script>
     <script src="sprite.js"></script>
+    <script src="input.js"></script>
   </head>
   <body>
     <canvas width="800" height="600"></canvas>
@@ -33,7 +34,7 @@
       var population = [];
       let bestOrder;
       let bestOrderScore = Infinity;
-      let num_of_cities = 200;
+      let num_of_cities = 130;
 
       let calculating = false;
       let show_lines = false;
@@ -53,9 +54,6 @@
         if (e.key == "l") {
           show_loops = !show_loops;
           obj("#loopbreaker").innerHTML = show_loops;
-          if (!show_loops) {
-            findBestOrder(Infinity);
-          }
         }
         if (e.key == "d") {
           obj("#distance").innerHTML = getActualDistance() + " pixels";
@@ -124,17 +122,25 @@
         }
         return bestOrder;
       }
-      let n = 0;
-      function draw() {
-        setTimeout(draw, 1000 / 220);
-        ctx.clearRect(-2, -2, canvas.width + 2, canvas.height + 2);
 
-        for (let city of cities) {
+	  function drawCity(city,color="black"){
           ctx.beginPath();
           ctx.arc(city.x, city.y, 10, 0, Math.PI * 2);
           ctx.strokeStyle = "black";
           ctx.lineWidth = 4;
           ctx.stroke();
+		  ctx.fillStyle = color;
+		  if(color!=='black') ctx.fill();
+	  }
+
+      let n = 0;
+      function draw() {
+        setTimeout(draw, 1000 / 220);
+        ctx.clearRect(-2, -2, canvas.width + 2, canvas.height + 2);
+
+        let clst = cityClosestToMouse();
+        for (let city of cities) {
+			drawCity(city);
         }
         if (calculating) {
           findBestOrder();
@@ -171,17 +177,36 @@
         population = newPopulation;
       }
 
+      mouse.start(canvas);
+      function cityClosestToMouse() {
+        let min = cities[0];
+        let d = Infinity;
+        for (let city of cities) {
+          let dist = (city.x - mouse.pos.x) ** 2 + (city.y - mouse.pos.y) ** 2;
+          if (dist < d) {
+            d = dist;
+            min = city;
+          }
+        }
+        return min;
+      }
+
       function mutate(order) {
         let copy = order.slice();
+        // let r1 = cities.indexOf(cityClosestToMouse());
         let r1 = random(0, order.length - 1);
+		// drawCity(cities[r1],'green');
         let srt = cities.slice().sort((a, b) => {
           let dist1 = (cities[r1].x - a.x) ** 2 + (cities[r1].y - a.y) ** 2;
           let dist2 = (cities[r1].x - b.x) ** 2 + (cities[r1].y - b.y) ** 2;
           return dist1 - dist2;
         });
-        let r2 = cities.indexOf(weightedRandomChoice(srt));
+		let c2 = weightedRandomChoice(srt)
+		// drawCity(c2,'blue');
+        let r2 = cities.indexOf(c2);
         if (random(0, 5) > 2) {
-          copy.insert(r2, copy.splice(r1, 1)[0]);
+          if(random(0,1)==1) copy.insert(copy.indexOf(r2), copy.splice(copy.indexOf(r1), 1)[0]);
+		  else copy.insert(r2, copy.splice(r1, 1)[0]);
         } else {
           swap(copy, r1, r2);
         }
@@ -217,6 +242,7 @@
                 let part2 = bestOrder.slice(i + 1, j + 1).reverse();
                 let part3 = bestOrder.slice(j + 1);
                 bestOrder = part1.concat(part2, part3);
+                bestOrderScore = getFitness(bestOrder);
               }
             }
           }
