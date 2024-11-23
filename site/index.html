@@ -1,243 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
-	<link rel="icon" type="image/x-icon" href="icon.png">
-	<style>
-		body{
-			background-color: grey;
-		}
-		canvas{
-			background-color: white;
-		}
-	</style>
-	<script src="helpers.js"></script>
-	<script src="sprite.js"></script>
-</head>
-<body>
-	<canvas width=800 height=600></canvas>
-	<p></p>
-	<p id=loopbreaker>False</p>
-	<p id="distance"></p>
-	<script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="icon" type="image/x-icon" href="icon.png" />
+    <style>
+      body {
+        background-color: grey;
+      }
+      canvas {
+        background-color: white;
+      }
+    </style>
+    <script src="helpers.js"></script>
+    <script src="sprite.js"></script>
+  </head>
+  <body>
+    <canvas width="800" height="600"></canvas>
+    <p></p>
+    <p id="loopbreaker">False</p>
+    <p id="distance"></p>
+    <script>
+      Array.prototype.insert = function (index, ...items) {
+        this.splice(index, 0, ...items);
+      };
 
-		Array.prototype.insert = function ( index, ...items ) {
-		    this.splice( index, 0, ...items );
-		};
-		
-		var canvas = obj('canvas');
-		var ctx = canvas.getContext('2d');
+      var canvas = obj("canvas");
+      var ctx = canvas.getContext("2d");
 
-		let cities = [];
-		var population = [];
-		let bestOrder;
-		let bestOrderScore = Infinity;
-		let num_of_cities = 100;
+      let cities = [];
+      var population = [];
+      let bestOrder;
+      let bestOrderScore = Infinity;
+      let num_of_cities = 500;
 
-		let calculating = false;
-		let show_lines = false;
-		let randomshow = false;
-		let show_loops = false;
+      let calculating = false;
+      let show_lines = false;
+      let randomshow = false;
+      let show_loops = false;
 
-		document.on('keydown',e=>{
-			if(e.key == ' '){
-				calculating = !calculating;
-			}
-			if(e.key == 'a'){
-				show_lines = !show_lines;
-			}
-			if(e.key == 'r'){
-				randomshow = !randomshow;
-			}
-			if(e.key == 'l'){
-				show_loops = !show_loops;
-				obj('#loopbreaker').innerHTML = show_loops;
-			}
-			if(e.key == 'd'){
-				obj('#distance').innerHTML = getActualDistance() + ' pixels';
-			}
-		})
+      document.on("keydown", (e) => {
+        if (e.key == " ") {
+          calculating = !calculating;
+        }
+        if (e.key == "a") {
+          show_lines = !show_lines;
+        }
+        if (e.key == "r") {
+          randomshow = !randomshow;
+        }
+        if (e.key == "l") {
+          show_loops = !show_loops;
+          obj("#loopbreaker").innerHTML = show_loops;
+          if (!show_loops) {
+            findBestOrder(Infinity);
+          }
+        }
+        if (e.key == "d") {
+          obj("#distance").innerHTML = getActualDistance() + " pixels";
+        }
+      });
 
-		function generatePopulation(n=5){
-			for(let i=0;i<n-1;i++){
-				let order = range(0,num_of_cities);
-				order.sort(()=>Math.random()-.5);
-				if(order.includes(undefined)) debugger;
-				population.push(order);
-			}
-			population.push(bestOrder);
-		}
+      function generatePopulation(n = 5) {
+        for (let i = 0; i < n - 1; i++) {
+          let order = range(0, num_of_cities);
+          order.sort(() => Math.random() - 0.5);
+          if (order.includes(undefined)) debugger;
+          population.push(order);
+        }
+        population.push(bestOrder);
+      }
 
-		function getFitness(order){
-			let dist = 0;
-			for(let i=0;i<order.length-1;i++){
-				// Non euclidean distance
-				let city1 = cities[order[i]];
-				let city2 = cities[order[i+1]];
-				dist += (city1.x-city2.x)**2 + (city1.y-city2.y)**2;
-			}
-			return dist;
-		}
+      function getFitness(order) {
+        let dist = 0;
+        for (let i = 0; i < order.length - 1; i++) {
+          // Non euclidean distance
+          let city1 = cities[order[i]];
+          let city2 = cities[order[i + 1]];
+          dist += (city1.x - city2.x) ** 2 + (city1.y - city2.y) ** 2;
+        }
+        return dist;
+      }
 
-		function generateLoop(){
-			let copy = cities.slice();
-			let c = new Vector(canvas.width/2,canvas.height/2);
-			for(let city of copy){
-				let dir = Vector.getDir(city.x-c.x,city.y-c.y);
-				city.dir = dir;
-			}
-			copy = copy.sort((a,b)=>b.dir-a.dir);
-			return copy.map(city=>cities.indexOf(city));
-		}
+      function generateLoop() {
+        let copy = cities.slice();
+        let c = new Vector(canvas.width / 2, canvas.height / 2);
+        for (let city of copy) {
+          let dir = Vector.getDir(city.x - c.x, city.y - c.y);
+          city.dir = dir;
+        }
+        copy = copy.sort((a, b) => b.dir - a.dir);
+        return copy.map((city) => cities.indexOf(city));
+      }
 
-		function generateCities(num=5){
-			for(let i=0;i<num;i++){
-				let x = random(0,canvas.width);
-				let y = random(0,canvas.height);
-				cities.push(new Vector(x,y));
-			}
-			bestOrder = population[0];
-			bestOrder = generateLoop(range(0,num));
-		}
+      function generateCities(num = 5) {
+        for (let i = 0; i < num; i++) {
+          let x = random(0, canvas.width);
+          let y = random(0, canvas.height);
+          cities.push(new Vector(x, y));
+        }
+        bestOrder = population[0];
+        bestOrder = generateLoop(range(0, num));
+      }
 
-		function generateCitiesWorst(num=5){
-			for(let i=0;i<num;i++){
-				let x = random(0,canvas.width);
-				let y = canvas.height/2;
-				cities.push(new Vector(x,y));
-			}
-			bestOrder = population[0];
-			bestOrder = generateLoop(range(0,num));
-		}
+      function generateCitiesWorst(num = 5) {
+        for (let i = 0; i < num; i++) {
+          let x = random(0, canvas.width);
+          let y = canvas.height / 2;
+          cities.push(new Vector(x, y));
+        }
+        bestOrder = population[0];
+        bestOrder = generateLoop(range(0, num));
+      }
 
-		function findBestOrder(){
-			for(let order of population){
-				let fitness = getFitness(order);
-				if(fitness < bestOrderScore){
-					bestOrder = order;
-					bestOrderScore = fitness;
-				}
-			}
-			return bestOrder;
-		}
-		let n = 0;
-		function draw(){
-			setTimeout(draw,1000/60);
-			ctx.clearRect(-2,-2,canvas.width+2,canvas.height+2);
+      function findBestOrder(start = bestOrderScore) {
+        for (let order of population) {
+          let fitness = getFitness(order);
+          if (fitness < start) {
+            bestOrder = order;
+            bestOrderScore = fitness;
+          }
+        }
+        return bestOrder;
+      }
+      let n = 0;
+      function draw() {
+        setTimeout(draw, 1000 / 220);
+        ctx.clearRect(-2, -2, canvas.width + 2, canvas.height + 2);
 
+        for (let city of cities) {
+          ctx.beginPath();
+          ctx.arc(city.x, city.y, 10, 0, Math.PI * 2);
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 4;
+          ctx.stroke();
+        }
+        if (calculating) {
+          findBestOrder();
+          // connectCities(population[n],'lightgray')
+          n = (n + 1) % population.length;
+          obj("p").innerHTML = bestOrderScore;
+          createNextGeneration();
+        }
+        if (show_lines) connectCities(bestOrder);
+        if (randomshow) connectCities(population[0], "black");
+        if (show_loops) findLoop();
+      }
 
-			for(let city of cities){
-				ctx.beginPath();
-				ctx.arc(city.x,city.y,10,0,Math.PI*2);
-				ctx.strokeStyle = 'black';
-				ctx.lineWidth = 4;
-				ctx.stroke();
-			}
-			if(calculating){
-				findBestOrder();
-				// connectCities(population[n],'lightgray')
-				n = (n+1) % population.length;
-				obj('p').innerHTML = bestOrderScore;
-				createNextGeneration();
-			}
-			if(show_lines) connectCities(bestOrder);
-			if(randomshow) connectCities(population[0],'black');
-			if(show_loops) findLoop();
-		}
+      function connectCities(order, color = "black") {
+        ctx.beginPath();
+        ctx.moveTo(cities[order[0]].x, cities[order[0]].y);
+        ctx.lineWidth = color == "black" ? 5 : 2;
+        for (let n of order) {
+          ctx.lineTo(cities[n].x, cities[n].y);
+        }
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      }
 
-		function connectCities(order,color='black'){
-			ctx.beginPath();
-			ctx.moveTo(cities[order[0]].x,cities[order[0]].y);
-			ctx.lineWidth = color=='black'?5:2;
-			for(let n of order){
-				ctx.lineTo(cities[n].x,cities[n].y)
-			}
-			ctx.strokeStyle = color;
-			ctx.stroke();
-		}
+      function createNextGeneration() {
+        let newPopulation = [];
+        for (let p of population) {
+          if (random(0, 8) > 4) {
+            newPopulation.push(mutate(bestOrder));
+          } else {
+            newPopulation.push(mutate(p));
+          }
+        }
+        population = newPopulation;
+      }
 
-		function createNextGeneration(){
-			let newPopulation = [];
-			for(let p of population){
-				if(random(0,8)>4){
-					newPopulation.push(mutate(bestOrder));
-				} else {
-					newPopulation.push(mutate(p));
-				}
-			}
-			population = newPopulation;
-		}
+      function mutate(order) {
+        let copy = order.slice();
+        let r1 = random(0, order.length - 1);
+        let r2 = random(0, order.length - 1);
+        if (random(0, 5) > 2) {
+          copy.insert(r2, copy.splice(r1, 1)[0]);
+        } else {
+          swap(copy, r1, r2);
+        }
+        // if(random(0,1)==1){
+        // 	mutate(copy);
+        // }
+        if (random(0, 1) == 1) {
+          let r = random(1, copy.length - 1);
+          for (let i = 0; i < r; i++) {
+            copy.push(copy.shift());
+          }
+        }
+        return copy;
+      }
 
-		function mutate(order){
-			let copy = order.slice();
-			let r1 = random(0,order.length-1);
-			let r2 = random(0,order.length-1);
-			if(random(0,5)>2){
-				copy.insert(r2,copy.splice(r1,1)[0]);
-			} else {
-				swap(copy,r1,r2);
-			}
-			// if(random(0,1)==1){
-			// 	mutate(copy);
-			// }
-			if(random(0,1)==1){
-				let r = random(1,copy.length-1);
-				for(let i=0;i<r;i++){
-					copy.push(copy.shift());
-				}
-			}
-			return copy;
-		}
+      function findLoop(fix = true) {
+        let lines = [];
+        for (let i = 0; i < bestOrder.length - 1; i++) {
+          let city1 = cities[bestOrder[i]];
+          let city2 = cities[bestOrder[i + 1]];
+          let l = new Line(city1.x, city1.y, city2.x, city2.y);
+          l.city1 = city1;
+          l.city2 = city2;
+          lines.push(l);
+        }
+        for (let i = 0; i < lines.length; i++) {
+          for (let j = i + 1; j < lines.length; j++) {
+            if (lines[i].touches(lines[j])) {
+              lines[i].draw("red");
+              lines[j].draw("red");
+              if (fix) {
+                let part1 = bestOrder.slice(0, i + 1);
+                let part2 = bestOrder.slice(i + 1, j + 1).reverse();
+                let part3 = bestOrder.slice(j + 1);
+                bestOrder = part1.concat(part2, part3);
+              }
+            }
+          }
+        }
+      }
 
-		function findLoop(fix=true){
-			let lines = [];
-			for(let i=0;i<bestOrder.length-1;i++){
-				let city1 = cities[bestOrder[i]];
-				let city2 = cities[bestOrder[i+1]];
-				let l = new Line(city1.x,city1.y,city2.x,city2.y);
-				l.city1 = city1;
-				l.city2 = city2;
-				lines.push(l);
-			}
-			for(let i=0;i<lines.length;i++){
-				for(let j=i+1;j<lines.length;j++){
-					if(lines[i].touches(lines[j])){
-						lines[i].draw('red');
-						lines[j].draw('red');
-						if(fix){
-							let part1 = bestOrder.slice(0,i+1);
-							let part2 = bestOrder.slice(i+1,j+1).reverse();
-							let part3 = bestOrder.slice(j+1)
-							bestOrder = part1.concat(part2,part3);
-						}
-					}
-				}
-			}
-		}
+      function getActualDistance() {
+        let sum = 0;
+        for (let i = 0; i < bestOrder.length - 1; i++) {
+          let city1 = cities[bestOrder[i]];
+          let city2 = cities[bestOrder[i + 1]];
+          sum += Vector.distance(city1.x, city1.y, city2.x, city2.y);
+        }
+        return sum;
+      }
 
-		function getActualDistance(){
-			let sum = 0;
-			for(let i=0;i<bestOrder.length-1;i++){
-				let city1 = cities[bestOrder[i]];
-				let city2 = cities[bestOrder[i+1]];
-				sum += Vector.distance(city1.x,city1.y,city2.x,city2.y);
-			}
-			return sum;
-		}
+      function swap(a, i, j) {
+        let temp = a[i];
+        a[i] = a[j];
+        a[j] = temp;
+      }
 
-		function swap(a,i,j){
-			let temp = a[i];
-			a[i] = a[j];
-			a[j] = temp;
-		}
-
-		generateCities(num_of_cities);
-		generatePopulation(400);
-		draw();
-
-
-	</script>
-</body>
+      generateCities(num_of_cities);
+      generatePopulation(210);
+      draw();
+    </script>
+  </body>
 </html>
