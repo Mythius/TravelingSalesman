@@ -33,7 +33,7 @@
       var population = [];
       let bestOrder;
       let bestOrderScore = Infinity;
-      let num_of_cities = 500;
+      let num_of_cities = 200;
 
       let calculating = false;
       let show_lines = false;
@@ -174,7 +174,12 @@
       function mutate(order) {
         let copy = order.slice();
         let r1 = random(0, order.length - 1);
-        let r2 = random(0, order.length - 1);
+        let srt = cities.slice().sort((a, b) => {
+          let dist1 = (cities[r1].x - a.x) ** 2 + (cities[r1].y - a.y) ** 2;
+          let dist2 = (cities[r1].x - b.x) ** 2 + (cities[r1].y - b.y) ** 2;
+          return dist1 - dist2;
+        });
+        let r2 = cities.indexOf(weightedRandomChoice(srt));
         if (random(0, 5) > 2) {
           copy.insert(r2, copy.splice(r1, 1)[0]);
         } else {
@@ -234,8 +239,32 @@
         a[j] = temp;
       }
 
+      function weightedRandomChoice(list) {
+        // Generate weights (e.g., [1, 1/2, 1/3, ..., 1/n])
+        const weights = list.map((_, index) => 1 / (index + 1));
+
+        // Calculate cumulative weights
+        const cumulativeWeights = weights.reduce((acc, weight, index) => {
+          acc.push((acc[index - 1] || 0) + weight);
+          return acc;
+        }, []);
+
+        // Generate a random number between 0 and the total of cumulative weights
+        const totalWeight = cumulativeWeights[cumulativeWeights.length - 1];
+        const random = Math.random() * totalWeight;
+
+        // Find the item where the random number falls
+        for (let i = 1; i < cumulativeWeights.length; i++) {
+          if (random < cumulativeWeights[i]) {
+            return list[i];
+          }
+        }
+
+        return list[list.length - 1]; // Fallback (shouldn't normally occur)
+      }
+
       generateCities(num_of_cities);
-      generatePopulation(210);
+      generatePopulation(10);
       draw();
     </script>
   </body>
